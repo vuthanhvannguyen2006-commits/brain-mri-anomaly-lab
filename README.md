@@ -38,7 +38,7 @@ We begin with **Medical Segmentation Decathlon, Task01_BrainTumour**. The downlo
 - [Public AWS registry and license](https://registry.opendata.aws/msd/)
 - [Dataset paper](https://doi.org/10.1038/s41467-022-30695-9)
 
-The dataset is distributed under **CC BY-SA 4.0**. Its license is separate from the MIT license for this repository's original code. MRI data is not included in this repository. See [data notes](docs/DATA.md).
+The dataset is distributed under **CC BY-SA 4.0**. Its license is separate from the MIT license for this repository's original code. One attributed learning sample (case BRATS_457, approximately 9.7 MB) is included in `data/msd_brain_tumour_sample.zip`; other MRI data remains excluded. See [sample attribution and Colab loading instructions](data/README.md). See [data notes](docs/DATA.md).
 
 **Scope limitation:** this dataset supports tumor-region segmentation. Region labels are not separate tumor diagnoses. It does not provide a complete tumor-versus-hemorrhage classification task or a representative normal examination cohort.
 
@@ -70,7 +70,7 @@ data/        Local downloads; ignored by Git
 outputs/     Local figures and results; ignored by Git
 ```
 
-Model checkpoints, downloaded scans, credentials, and generated notebook outputs are excluded from version control. Before publishing a notebook, use **Restart Kernel and Clear Outputs**, save it, and review the staged changes.
+Model checkpoints, other downloaded scans, credentials, and generated notebook outputs are excluded from version control. Only the explicitly attributed sample ZIP is included. Before publishing a notebook, use **Restart Kernel and Clear Outputs**, save it, and review the staged changes.
 
 ## Publishing on GitHub
 

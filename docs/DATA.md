@@ -25,3 +25,7 @@ license in this repository does not relicense the dataset.
 ## Diagnostic dataset requirements
 
 For each target condition, distinguish positive, verified negative, and unknown labels. An examination may have several conditions; absent annotations do not prove absence. Distinguish scan diagnoses from region labels. Do not copy every scan diagnosis onto every crop. Check sequence compatibility and validate localization on the diagnostic dataset before reusing the tumor-only localizer.
+
+## Bundled sample
+
+The repository includes `data/msd_brain_tumour_sample.zip` (case BRATS_457) under CC BY-SA 4.0, separately from the MIT code license. See `data/README.md` and the attribution notice inside the ZIP for provenance, changes, and license links. All other downloaded data remains ignored.

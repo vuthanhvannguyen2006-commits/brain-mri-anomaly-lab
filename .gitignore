@@ -25,3 +25,7 @@ wandb/
 *.ckpt
 *.onnx
 *.part
+
+# Explicitly redistribute this single licensed learning sample.
+!data/msd_brain_tumour_sample.zip
+!data/README.md
