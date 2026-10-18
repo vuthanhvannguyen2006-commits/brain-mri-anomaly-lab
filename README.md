@@ -2,17 +2,17 @@
 
 A learning project exploring how AI can locate abnormal regions in brain MRI and, eventually, classify findings.
 
-**Status:** first MRI exploration and audit completed; preparing YOLO segmentation data. No models have been trained and no performance results are claimed. This is a research and learning project, not a diagnostic tool.
+**Status:** notebooks 1_1 and 1_2 completed, including a small U-Net fixed-batch training comparison. No held-out patient evaluation has been performed. This is a research and learning project, not a diagnostic tool.
 
 Current focus: segment edema, enhancing tumor, and non-enhancing tumor. Specific tumor-type diagnosis is deferred.
 
 ## Research questions
 
-- Does locating abnormalities first improve multi-label classification compared with classifying the whole MRI?
-- Does combining whole-MRI and localized-region information help further?
-- How does joint YOLO localization and classification compare with a two-step system, if suitable labels become available?
-- How well do these systems handle irregular boundaries, multiple lesions, and coexisting conditions?
-- What evidence supports each prediction, and how reliable are explanations?
+- How accurately can semantic segmentation reproduce the annotated tissue regions, including irregular boundaries and holes?
+- How do MRI sequence choice and neighboring-slice or 3D context affect performance?
+- How reliable are uncertainty estimates and explanations?
+
+The baseline is a small 2D U-Net using native pixel masks. YOLO instance segmentation is no longer the primary approach. Tumor-type diagnosis and diagnostic classification comparisons are deferred.
 
 ## Start here
 
@@ -30,6 +30,12 @@ Open `notebooks/1_1_msd_task01_brain_tumour_dataset_explore_mri_and_data_audit.i
 
 **Colab alternative:** upload the notebook to Colab and follow its setup cell. That cell downloads only one case and its mask into the temporary runtime. Keep the runtime on CPU.
 
+## Completed baseline experiment
+
+[Notebook 1_2: semantic segmentation baseline — raw versus z-score](notebooks/1_2_semantic_segmentation_baseline_raw_vs_zscore.ipynb) includes preparation, reproducibility setup, a small U-Net, and saved comparison plots.
+
+On one fixed batch of four slices from case BRATS_457, after 60 updates per model, edema Dice was 0.000 for raw input and 0.861 for z-score input. Both models missed enhancing tumor; non-enhancing tumor was absent from this batch and was not scored. Z-score is the provisional preprocessing default, not a validated generalization result. The original masks remain unchanged.
+
 ## Dataset
 
 We begin with **Medical Segmentation Decathlon, Task01_BrainTumour**. The downloader uses HTTP byte ranges to scan archive headers and fetch one case, skipping unrelated contents. Scanning may take several minutes; progress shows transferred bytes. Re-running it skips existing files with the expected byte size.
@@ -44,21 +50,16 @@ The dataset is distributed under **CC BY-SA 4.0**. Its license is separate from 
 
 ## Learning roadmap
 
-- [x] Project structure and first exploration notebook
-- [x] Complete first MRI and expert-mask exploration
-- [x] Inspect the starter sample and audit its annotations
-- [ ] Prepare YOLO segmentation annotations in notebook 1_2 (current activity)
-- [ ] Select suitable diagnostic data for future multi-condition studies
-- [ ] Define target conditions and patient-separated splits
-- [ ] Train a small YOLO segmentation learning baseline
-- [ ] Train a whole-MRI multi-label classifier
-- [ ] Adapt localization and train a two-step classifier on the diagnostic dataset
-- [ ] Compare whole-MRI, expert-region, predicted-region, and combined-input models
-- [ ] Compare joint YOLO diagnostic predictions when matching location labels exist
-- [ ] Evaluate coexisting conditions, 3D context, uncertainty, and explainability
-- [ ] Publish reproducible results and a public-sample demo
+- [x] Project structure, sample exploration, and data audit in notebook 1_1
+- [x] Inspect contours and demonstrate the effect of filling holes on one slice
+- [x] Prepare native semantic image/mask pairs in notebook 1_2
+- [x] Run a small 2D U-Net fixed-batch learning diagnostic and compare raw versus z-score input
+- [ ] Obtain sufficient cases and establish patient-separated evaluation splits
+- [ ] Evaluate segmentation and compare single/multi-sequence input
+- [ ] Compare 2D, 2.5D, and 3D context; consider transformers if justified
+- [ ] Investigate uncertainty and explainability; publish reproducible results
 
-Follow the [step-by-step roadmap](docs/ROADMAP.md) and [experiment design](docs/EXPERIMENTS.md). No model training or evaluation has been completed.
+Follow the [roadmap](docs/ROADMAP.md) and [experiment design](docs/EXPERIMENTS.md). Training-batch diagnostics have been completed; generalization to unseen patients remains untested.
 
 ## Repository layout
 
@@ -70,7 +71,7 @@ data/        Local downloads; ignored by Git
 outputs/     Local figures and results; ignored by Git
 ```
 
-Model checkpoints, other downloaded scans, credentials, and generated notebook outputs are excluded from version control. Only the explicitly attributed sample ZIP is included. Before publishing a notebook, use **Restart Kernel and Clear Outputs**, save it, and review the staged changes.
+Model checkpoints, other downloaded scans, and credentials are excluded from version control. The explicitly attributed sample ZIP is included. Retain reviewed notebook outputs and figures when they explain experimental decisions; check outputs for sensitive content before publishing. Saved outputs are evidence of a recorded run, not a substitute for a fresh-runtime reproducibility check.
 
 ## Publishing on GitHub
 

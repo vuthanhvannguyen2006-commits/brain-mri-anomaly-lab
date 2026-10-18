@@ -1,39 +1,45 @@
-# Planned experiments
+# Planned segmentation experiments
 
-These are plans, not completed experiments.
+This document records the initial experiment and plans for further evaluation.
 
-## Main question
+## Current question
 
-Does localization improve examination-level multi-label classification over a whole-MRI classifier? Each condition gets an independent probability. Unknown labels are excluded from the relevant loss and metrics, not treated as negative.
+How accurately can a semantic model reproduce expert tissue-region masks while preserving irregular boundaries and holes?
 
-## Models
+The target is one categorical label per pixel/voxel: background, edema, non-enhancing tumor, or enhancing tumor. These labels do not constitute tumor-type diagnosis. Semantic segmentation can represent disconnected regions without converting them into separate object instances.
 
-- A: Whole-MRI classifier, using full-examination slice/patch aggregation if needed.
-- B: Expert-region classifier with surrounding context; a reference for the potential benefit of localization, not a deployable pipeline or guaranteed upper bound.
-- C: Predicted-region two-step pipeline: locate multiple candidates, classify, and aggregate examination evidence.
-- D: Combined full-MRI and predicted-region model, preserving global context.
-- E: Joint YOLO localization and diagnostic classification when corresponding region and diagnosis labels exist. Standard exclusive object labels may require adaptation for overlapping conditions.
+## Initial baseline
 
-Compare B and C on the same location-annotated held-out cases. This helps separate the value of localization from the impact of localization errors.
+A small 2D U-Net in PyTorch uses a slice input and four per-pixel class scores. Start with a single-case overfit check only to verify the training pipeline. Keep integer expert masks directly; no polygon conversion or intentional filling of holes is needed.
 
-## Fair comparison
+FLAIR-only input is an initial learning simplification. It may not provide sufficient information for all expert labels; multi-sequence input is a planned comparison, not a proven improvement.
 
-Use identical held-out patients, MRI sequence availability, and preprocessing. Keep classifier backbones and input resolution comparable where practical; document model capacity, tuning, and compute differences. Tune thresholds and aggregation only on validation data. Keep repeat scans and overlapping source cases in one split. Record seeds, versions, hardware, and runtime. Repeat with multiple seeds when feasible.
+## Controlled comparisons
 
-A later 3D-versus-2D architecture experiment is separate: it changes more than localization alone.
+- Single-sequence versus multi-sequence input with other settings comparable.
+- 2D versus neighboring-slice context (2.5D).
+- A later 3D CNN baseline, documenting capacity and compute differences.
+- Transformers or YOLO-based alternatives only when justified by a specific research question.
 
-## Multiple lesions and conditions
-
-Retain multiple candidate regions, not just the largest lesion. Compare a documented aggregation baseline, such as per-condition maximum, with learned aggregation when feasible. Calibrate final examination probabilities after aggregation on validation data.
-
-Include false-positive crops in training. Use verified region labels or examination-supervised multiple-instance learning; do not assign all scan diagnoses to all crops. Define zero-candidate behavior and count missed lesions in full-pipeline evaluation. Validate a tumor-trained localizer before using it for other conditions. Diffuse findings may require semantic masks or global context.
+Use identical patient-separated evaluation sets. Split before extracting slices, and keep all sequences and repeat examinations of a patient together. Record seeds, normalization, augmentations, versions, runtime, and hardware. Apply spatial transforms consistently to images and masks; categorical mask resampling must preserve label identities. Do not tune on the test set.
 
 ## Evaluation
 
-- Per condition: sensitivity, precision, precision–recall area, false positives, and prevalence at validation-selected thresholds; report macro averages.
-- Examination: multi-label precision/recall, calibration, and separate coexisting-condition results.
-- Localization: lesion sensitivity at false positives per examination, Dice, and surface distances in millimeters where annotations exist.
-- Robustness: small lesions, lesion count, site/scanner, sequence availability, and external data where available.
-- Uncertainty: patient-level confidence intervals and abstention performance, including coverage (fraction receiving predictions).
+Report per-region Dice, surface distances in millimeters, volume errors, and false positives. Document handling of absent classes. Inspect holes, small regions, and consistency across slices. Use patient-level uncertainty estimates once sufficient cases exist. Retain original expert masks as the reference.
 
-Evaluate all examinations, not only correctly detected lesions. Test attribution using model randomization, perturbations, occlusion, and sequence ablation. Record failures alongside representative successes.
+Preserved contour reconstruction on inspected slice 52 matched the source exactly. Filling edema outlines instead added 94 pixels: 26 from background and 68 from enhancing tumor. This is a preprocessing observation on one slice, not model performance.
+
+## Deferred questions
+
+Tumor-type diagnosis and whole-MRI versus two-step diagnostic classification are outside the active scope. Revisit only with appropriate diagnostic evidence, verified scan-level/region labels, and coexisting-condition data where relevant. Do not interpret region categories as diagnoses.
+
+## Recorded notebook 1_2 result
+
+One fixed batch from BRATS_457, four FLAIR slices, 60 updates per model, Adam learning rate 0.001, and unweighted cross-entropy. The z-score model restores the raw model’s saved initial state; the recorded equality check passed. The notebook includes seed setup and retained figures. These are training-batch diagnostics, not held-out validation.
+
+- Raw final recorded pre-update loss: 0.139491; edema Dice: 0.000; 35 predicted edema pixels.
+- Z-score final recorded pre-update loss: 0.030717; edema Dice: 0.861; 8,678 predicted edema pixels.
+- Expert edema: 8,027 pixels; enhancing tumor: 566 pixels. Neither model predicted enhancing tumor.
+- Non-enhancing tumor: absent; Dice not scored.
+
+Decision: use z-score provisionally. Improved optimization on one batch does not establish an improvement on unseen patients. Region-specific metrics are necessary because falling aggregate loss concealed foreground failure.

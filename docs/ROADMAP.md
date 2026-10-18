@@ -1,64 +1,45 @@
 # Learning roadmap
 
-## 1. Understand one MRI — completed first exploration
+## Current scope
 
-Learn volume, slice, sequence, voxel spacing, and mask labels. Display expert regions with a fixed-color legend. Explain why edema, non-enhancing tumor, and enhancing tumor are region labels rather than separate diagnoses.
+Semantic segmentation of background (0), edema (1), non-enhancing tumor (2), and enhancing tumor (3). These are tissue-region categories, not tumor diagnoses. Tumor-type diagnosis and whole-MRI versus two-step diagnostic classification are deferred, not current milestones.
 
-Deliverable: exploration notebook and observations. CPU is enough.
+## 1. Investigation and preparation
 
-## 2. Choose data for the final question — current stage
+- Completed: `1_1` sample download, MRI exploration, mask inspection, and audit.
+- Completed: `1_2_semantic_segmentation_baseline_raw_vs_zscore.ipynb`, covering preparation and a fixed-batch U-Net comparison. Keep native integer masks; polygon export is no longer required. The contour exercise demonstrated how lossy conversion could alter annotations.
+- Preserve mask holes and small regions. Verify shapes, affine alignment, label values, and image/mask transformations.
+- Prepare one slice for inspection, then extend to the volume. Keep original files unchanged.
+- Initial single-sequence FLAIR input is a learning simplification; region labels may require other sequences. Document this limitation and later compare multi-sequence input.
 
-Start with `notebooks/1_1_msd_task01_brain_tumour_dataset_explore_mri_and_data_audit.ipynb` to inventory the starter case and identify missing diagnostic labels. Then define a small set of target conditions. Audit MRI datasets for verified diagnoses, coexisting conditions, normal examinations, mimics, sequence availability, and location annotations. Complete this before extensive training.
+Deliverable: reproducible image/mask pairs with exact target-label preservation. Rename the notebook descriptively when appropriate, retaining the user's stage_activity numbering. Do not silently rename user files.
 
-Keep positive, verified-negative, and unknown labels distinct. Missing findings are not confirmed absences. Labels must belong to the actual scan used. Check patient overlap across data sources and keep repeat scans together when splitting.
+## 2. First semantic model
 
-Deliverable: dataset audit, label definitions, and patient-separated train/validation/test manifest. If multi-condition data is unavailable, narrow the claims explicitly.
+The completed baseline uses a small 2D U-Net in PyTorch: input MRI slice, output four per-pixel class scores. A one-case overfit exercise verifies the pipeline only; it cannot establish generalization.
 
-## 3. Learn localization with YOLO
+Before validation, obtain more cases, verify patient grouping, and create patient-separated train/validation/test splits before slice extraction. Keep all sequences and repeated examinations of one patient in the same split.
 
-Prepare slices and derive boxes from masks on a small starter-data subset. Split by patient before extracting slices. Train a YOLO segmentation baseline and inspect boundary errors.
+Deliverable: working semantic training loop, predictions, and held-out evaluation when sufficient data exists.
 
-Deliverable: reproducible region-segmentation exercise, not tumor-diagnosis classification.
+## 3. Spatial context and MRI sequences
 
-## 4. Build the whole-MRI classifier
+Compare single-sequence and multi-sequence inputs under matched conditions. Then progress from 2D to neighboring-slice context (2.5D) and a 3D CNN baseline. Keep sequence channels distinct from depth. Consider transformers only to address demonstrated remaining problems. Depth is spatial, not time; sequential models are optional.
 
-On the diagnostic dataset, predict one independent probability per condition. Begin with a manageable slice/patch encoder and aggregate information across the examination. Do not use only a manually selected abnormal slice.
+Deliverable: controlled experiments on the same patient-separated data, including consistency across slices.
 
-Deliverable: baseline examination-level predictions and evaluation.
+## 4. Evaluation and explainability
 
-## 5. Build the two-step classifier
+Report per-region Dice, boundary distances in millimeters, and volume error. Inspect absent classes, small regions, holes, and false positives. Keep expert masks as the reference. Investigate uncertainty and test attribution explanations rather than treating them as proof of valid reasoning.
 
-Validate and adapt localization on the diagnostic dataset. Retain multiple candidates and surrounding tissue. Classify candidates and combine evidence into examination-level probabilities.
+Deliverable: documented performance, uncertainty, and representative failures. No clinical-use claims based on segmentation scores alone.
 
-Multiple lesions may share one diagnosis. Different conditions may occur in separate regions or overlap in one region. Use verified region labels, or learn from sets of crops using examination-level labels (multiple-instance learning). Do not copy every scan diagnosis onto every crop.
+## 5. Share and revisit future questions
 
-Deliverable: complete pipeline, including behavior for zero candidates and false-positive candidates. Missed lesions count in evaluation.
+Publish code, configurations, and honest results. Keep private working notes excluded. One explicitly attributed public sample is bundled; other data stays ignored.
 
-## 6. Test whether localization helps
+YOLO detection/instance segmentation can be a later comparison if it answers a defined question. It is not the required primary model for this semantic task. Diagnostic classification requires a separate data and label plan and is deferred.
 
-Compare whole-MRI, expert-region, predicted-region, and full-MRI-plus-region models on the same patients. Add joint YOLO diagnostic classification when matching location and diagnosis annotations are available; overlapping conditions may need adapted object-label handling.
+## Checkpoint after notebook 1_2
 
-Deliverable: controlled results, patient-level uncertainty, and separate evaluation of cases with coexisting conditions. See EXPERIMENTS.md.
-
-## 7. Add context and explanations
-
-Compare 2D/2.5D and 3D context as separate experiments. Evaluate calibration, abstention, and attribution sanity checks. A segmentation mask shows location; it does not explain a class decision by itself.
-
-Deliverable: documented failures, successes, and limitations.
-
-## 8. Share the project
-
-Publish code, configurations, documentation, and honest results on GitHub. Optionally publish weights with a model card and a Hugging Face demo using permitted public samples. Keep scans, credentials, and checkpoints outside the code repository.
-
-Deliverable: reproducible public project with source attribution and clear research scope.
-
-## Agreed scope and spatial-context progression
-
-Current focus: localize and segment edema, enhancing tumor, and non-enhancing tumor. These are tissue-region categories, not tumor diagnoses. Specific tumor-type diagnosis is deferred for later consideration; appropriate diagnostic evidence and labels would be needed.
-
-1. Start with 2D YOLO segmentation. Apply it slice by slice across the provided volume and reconstruct the predicted masks in 3D. Stacking predictions does not make the model a 3D model.
-2. Test neighboring-slice inputs (2.5D), predicting the middle slice from adjacent slices. Keep MRI sequence channels distinct from spatial slice positions.
-3. Establish a 3D CNN segmentation baseline using volumetric patches as memory permits.
-4. Consider transformers only if they address a remaining problem and improve held-out performance. Sequential models are optional alternatives, not required because MRI has ordered slices: depth is spatial, not time.
-
-Compare approaches on the same patient-separated evaluation data. Inspect consistency across slices as well as region overlap and boundary accuracy. Initial single-slice conversion is a learning exercise, not a complete training or evaluation dataset.
+Both raw and z-score experiments ran 60 updates on the same four-slice training batch. Z-score improved edema Dice from 0.000 to 0.861; neither model predicted enhancing tumor, and non-enhancing tumor was absent. Adopt z-score provisionally and retain raw results. Next activity remains to be planned; patient-separated evaluation and the unresolved smaller-region failure remain open. Preserve saved notebook outputs to show the evidence behind decisions.
